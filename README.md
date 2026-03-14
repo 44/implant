@@ -11,7 +11,7 @@ uvx --from git+https://github.com/44/implant implant
 ```
 
 This will show a code like `7-abcde-fghij`, wait for the sender to respond.
-Sender is expected to send a ZIP file containing the payload. Payload is
+Sender is expected to send a folder. Payload is
 extracted into temporary directory and is expected to contain `install.py`
 self-contained script which is executed using `uv`.
 
