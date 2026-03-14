@@ -12,30 +12,34 @@ def receive():
     """Receive a folder from sender and execute install.py."""
     print("Starting receiver...", flush=True)
 
+    orig_dir = os.getcwd()
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
-        os.system("uvx magic-wormhole receive --no-listen --allocate --accept-file")
+        try:
+            os.system("uvx magic-wormhole receive --no-listen --allocate --accept-file")
 
-        received_items = list(Path(tmpdir).iterdir())
-        if not received_items:
-            print("Error: No files received", flush=True)
-            sys.exit(1)
+            received_items = list(Path(tmpdir).iterdir())
+            if not received_items:
+                print("Error: No files received", flush=True)
+                sys.exit(1)
 
-        received_path = received_items[0]
-        print(f"Received: {received_path}", flush=True)
+            received_path = received_items[0]
+            print(f"Received: {received_path}", flush=True)
 
-        install_script = (
-            received_path / "install.py"
-            if received_path.is_dir()
-            else Path(tmpdir) / "install.py"
-        )
+            install_script = (
+                received_path / "install.py"
+                if received_path.is_dir()
+                else Path(tmpdir) / "install.py"
+            )
 
-        if not install_script.exists():
-            print("Error: install.py not found in payload", flush=True)
-            sys.exit(1)
+            if not install_script.exists():
+                print("Error: install.py not found in payload", flush=True)
+                sys.exit(1)
 
-        print("Running install.py with uv...", flush=True)
-        os.system(f"uv run {install_script}")
+            print("Running install.py with uv...", flush=True)
+            os.system(f"uv run {install_script}")
+        finally:
+            os.chdir(orig_dir)
 
 
 def send(folder_path, code):
