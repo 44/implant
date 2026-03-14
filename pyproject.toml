@@ -1,0 +1,11 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "implant"
+version = "0.1.0"
+description = "Wrapper around magic-wormhole for secure file transfer"
+
+[project.scripts]
+implant = "implant:main"
