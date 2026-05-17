@@ -16,7 +16,7 @@ def receive():
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
         try:
-            os.system("uvx magic-wormhole receive --no-listen --allocate --accept-file")
+            os.system("uvx --no-config magic-wormhole receive --no-listen --allocate --accept-file")
 
             received_items = list(Path(tmpdir).iterdir())
             if not received_items:
@@ -60,7 +60,7 @@ def send(folder_path, code):
 
     print(f"Sending {folder_path} to code {code}...", flush=True)
     os.chdir(folder)
-    os.system(f"uvx magic-wormhole send . --code {code} --no-listen")
+    os.system(f"uvx --no-config magic-wormhole send . --code {code} --no-listen")
 
 
 def main():
