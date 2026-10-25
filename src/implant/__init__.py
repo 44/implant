@@ -10,12 +10,24 @@ import tempfile
 from pathlib import Path
 
 
-def wormhole_cmd():
-    """Return command prefix for magic-wormhole, using uvx as fallback."""
+def wormhole_cmd(allow_fetch=True):
+    """Return command prefix for magic-wormhole.
+
+    Uses the native binary when available, otherwise optionally falls back to
+    resolving it through uvx. With allow_fetch=False, uvx is never invoked.
+    """
     exe = shutil.which("wormhole")
     if exe:
         return [exe]
-    return ["uvx", "--no-config", "magic-wormhole"]
+    if allow_fetch and shutil.which("uvx"):
+        return ["uvx", "--no-config", "magic-wormhole"]
+    print(
+        "Error: wormhole is not installed"
+        + ("" if allow_fetch else " and network fetching is disabled (--offline)"),
+        file=sys.stderr,
+        flush=True,
+    )
+    sys.exit(1)
 
 
 def croc_cmd():
@@ -24,7 +36,7 @@ def croc_cmd():
     return [exe] if exe else None
 
 
-def detect_transfer(preferred):
+def detect_transfer(preferred, allow_fetch=True):
     """Pick a transfer backend. Explicit choice wins, else prefer native tools."""
     if preferred != "auto":
         return preferred
@@ -32,7 +44,7 @@ def detect_transfer(preferred):
         return "wormhole"
     if shutil.which("croc"):
         return "croc"
-    if shutil.which("uvx"):
+    if allow_fetch and shutil.which("uvx"):
         return "wormhole"
     return None
 
@@ -61,7 +73,7 @@ def find_install_script(tmpdir):
     return received_path, install_script
 
 
-def receive(transfer, code):
+def receive(transfer, code, allow_fetch=True):
     """Receive a folder and execute install.py."""
     if transfer == "croc":
         cmd = croc_cmd()
@@ -82,7 +94,7 @@ def receive(transfer, code):
             )
             sys.exit(1)
     else:
-        cmd = wormhole_cmd()
+        cmd = wormhole_cmd(allow_fetch)
 
     print(f"Starting receiver ({transfer})...", flush=True)
 
@@ -115,7 +127,7 @@ def receive(transfer, code):
             os.chdir(orig_dir)
 
 
-def send(transfer, folder_path, code):
+def send(transfer, folder_path, code, allow_fetch=True):
     """Send a folder using the chosen code (or let the sender generate one)."""
     folder = Path(folder_path).resolve()
     if not folder.exists() or not folder.is_dir():
@@ -148,7 +160,7 @@ def send(transfer, folder_path, code):
         run(send_cmd)
         return
 
-    send_cmd = wormhole_cmd() + ["send", ".", "--no-listen"]
+    send_cmd = wormhole_cmd(allow_fetch) + ["send", ".", "--no-listen"]
     if code:
         send_cmd += ["--code", code]
     print(
@@ -181,6 +193,11 @@ def main():
         "--wormhole", action="store_true", help="Shortcut for --transfer wormhole"
     )
     parser.add_argument("--croc", action="store_true", help="Shortcut for --transfer croc")
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Never resolve wormhole through uvx; require an installed backend",
+    )
 
     args = parser.parse_args()
 
@@ -189,7 +206,8 @@ def main():
         sys.exit(1)
 
     preferred = "wormhole" if args.wormhole else "croc" if args.croc else args.transfer
-    transfer = detect_transfer(preferred)
+    allow_fetch = not args.offline
+    transfer = detect_transfer(preferred, allow_fetch)
     if transfer is None:
         print(
             "Error: no transfer backend found "
@@ -200,9 +218,9 @@ def main():
         sys.exit(1)
 
     if args.send:
-        send(transfer, args.send, args.code)
+        send(transfer, args.send, args.code, allow_fetch)
     else:
-        receive(transfer, args.code)
+        receive(transfer, args.code, allow_fetch)
 
 
 if __name__ == "__main__":

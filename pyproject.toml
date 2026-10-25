@@ -7,5 +7,10 @@ name = "implant"
 version = "0.1.0"
 description = "Wrapper around magic-wormhole for secure file transfer"
 
+# magic-wormhole is optional: install it with `implant[wormhole]` (e.g.
+# `uvx --from 'implant[wormhole]' implant`), use a system binary, or use croc.
+[project.optional-dependencies]
+wormhole = ["magic-wormhole>=0.12"]
+
 [project.scripts]
 implant = "implant:main"
