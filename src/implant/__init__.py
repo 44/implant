@@ -49,10 +49,10 @@ def detect_transfer(preferred, allow_fetch=True):
     return None
 
 
-def run(cmd, cwd=None):
+def run(cmd, cwd=None, env=None):
     """Run a command, inheriting stdio, and exit on failure."""
     print("+ " + " ".join(cmd), flush=True)
-    rc = subprocess.call(cmd, cwd=cwd)
+    rc = subprocess.call(cmd, cwd=cwd, env=env)
     if rc != 0:
         print(f"Error: command failed with exit code {rc}", file=sys.stderr, flush=True)
         sys.exit(rc)
@@ -105,10 +105,14 @@ def receive(transfer, code, allow_fetch=True):
                 receive_cmd = cmd + ["receive", "--no-listen", "--accept-file"]
                 if code:
                     receive_cmd.append(code)
+                receive_env = None
             else:
-                receive_cmd = cmd + ["--yes", "--overwrite", code]
+                # Recent croc refuses receive codes in argv (visible in `ps`);
+                # CROC_SECRET is the supported non-interactive alternative.
+                receive_cmd = cmd + ["--yes", "--overwrite"]
+                receive_env = dict(os.environ, CROC_SECRET=code)
 
-            run(receive_cmd, cwd=tmpdir)
+            run(receive_cmd, cwd=tmpdir, env=receive_env)
 
             received_path, install_script = find_install_script(tmpdir)
             if received_path is None:

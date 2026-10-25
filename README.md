@@ -23,7 +23,9 @@ uvx --from 'implant[wormhole]' implant
 
 `--transfer croc` (or `--croc`) uses [croc](https://github.com/schollz/croc) and
 requires `croc` to be installed on both machines. `croc` is a single Go binary,
-so there is no Python extra for it.
+so there is no Python extra for it. Recent croc versions reject receive codes
+passed on the command line, so `implant` hands the code to croc via the
+`CROC_SECRET` environment variable (which croc supports natively).
 
 Auto-detection (`--transfer auto`, default) picks `wormhole`, then `croc`, then
 `uvx`-provided wormhole. Use `--wormhole` / `--croc` as shortcuts.
